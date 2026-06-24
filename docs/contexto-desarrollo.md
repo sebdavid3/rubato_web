@@ -81,6 +81,44 @@ scraped-content/
 5. Revisar `scraped-content/images/[nombre]/` (imágenes)
 6. Implementar
 
+## Estrategia de branching
+
+```
+main
+│   Estable, deployable. Cada merge = fase completa funcionando.
+│
+├── feat/setup              ← Fase 0: create astro + tailwind + layout base
+├── feat/foundation         ← Fase 1: Inicio + Layout (Header/Footer)
+├── feat/institutional      ← Fase 2: Acerca de, Contacto, Apóyanos, Eventos
+├── feat/programs           ← Fase 3: Conservatorio, Cursos, Filarmónica + subpáginas
+├── feat/festival           ← Fase 4: Festival con ediciones, RioMar, Orquesta
+├── feat/polish             ← Fase 5: SEO, metadata, performance, deploy
+└── feat/ticketing          ← Fase 6 (futuro): boletas con QR
+```
+
+### Reglas
+
+- Cada **fase** = una branch desde `main`. Se mergea solo cuando la fase completa está lista y desplegable.
+- Sin branches por vista — la fase agrupa varias vistas.
+- **Naming**: `feat/<nombre-fase>`.
+- **Commits dentro de una branch**: atómicos por componente/vista, con prefijo (`feat:`, `fix:`, `refactor:`).
+- **Merge a main**: la fase se despliega. Si algo se frena, la fase no mergea pero lo que ya está en `main` sigue funcionando.
+
+Ciclo típico:
+
+```bash
+git checkout main
+git pull
+git checkout -b feat/programs
+# implementar conservatorio, cursos, filarmónica...
+git add .
+git commit -m "feat: implement conservatorio page"
+# más commits...
+git checkout main
+git merge feat/programs
+git branch -d feat/programs
+```
+
 ## Features clave
 
 ### Ediciones del Festival
