@@ -18,7 +18,7 @@ El festival es bianual. Ya existen la I Edición (2023), II Edición (2025), y v
 - `/festival-rubato/[edicion]/inscripciones` — formulario de inscripción de esa edición
 
 ### Implementación
-- Todas las rutas bajo `[edicion]` usan `getStaticPaths()` en Astro para generar una página estática por cada edición definida en `src/data/festival-editions.ts`.
+- Todas las rutas bajo `[edicion]` usan `getStaticPaths()` en Astro para generar una página estática por cada edición definida en la colección `content/festival-editions/` (TinaCMS).
 - `/festival-rubato` es un redirect (HTTP 302) al `[edicion]` de la edición con `active: true`.
 - Si alguna subpágina no tiene contenido para una edición (ej: cronograma aún no definido), se muestra un mensaje "Próximamente" con el diseño de la edición.
 
@@ -61,71 +61,67 @@ El festival es bianual. Ya existen la I Edición (2023), II Edición (2025), y v
 
 ## Datos estructurados
 
+Cada edición del festival es un documento en la colección TinaCMS `content/festival-editions/`. El schema se define en `tina/config.ts`:
+
 ```ts
-// src/data/festival-editions.ts
-export interface FestivalGuest {
-  id: string;
-  name: string;
-  country?: string;
-  specialty: string;
-  bio: string;
-  image: string;
-  socialLinks?: { platform: string; url: string }[];
+// tina/config.ts — colección festival-editions
+{
+  name: "festivalEdition",
+  label: "Ediciones del Festival",
+  path: "content/festival-editions",
+  format: "md",
+  fields: [
+    { name: "id", label: "ID", type: "string", required: true },        // "2025"
+    { name: "name", label: "Nombre", type: "string", required: true },   // "II Festival..."
+    { name: "year", label: "Año", type: "number", required: true },
+    { name: "active", label: "Edición activa", type: "boolean" },
+    { name: "dates", label: "Fechas", type: "string" },                  // "10 al 13 de septiembre"
+    { name: "description", label: "Descripción", type: "rich-text" },
+    { name: "heroImage", label: "Imagen hero", type: "image" },
+    { name: "mission", label: "Misión", type: "rich-text" },
+    { name: "vision", label: "Visión", type: "rich-text" },
+    { name: "guests", label: "Invitados", type: "object", list: true, fields: [
+      { name: "name", label: "Nombre", type: "string" },
+      { name: "country", label: "País", type: "string" },
+      { name: "specialty", label: "Especialidad", type: "string" },
+      { name: "bio", label: "Biografía", type: "rich-text" },
+      { name: "image", label: "Foto", type: "image" },
+      { name: "socialLinks", label: "Redes", type: "object", list: true, fields: [
+        { name: "platform", label: "Plataforma", type: "string" },
+        { name: "url", label: "URL", type: "string" },
+      ]},
+    ]},
+    { name: "schedule", label: "Cronograma", type: "object", list: true, fields: [
+      { name: "day", label: "Día", type: "string" },
+      { name: "date", label: "Fecha ISO", type: "string" },
+      { name: "events", label: "Actividades", type: "object", list: true, fields: [
+        { name: "time", label: "Hora", type: "string" },
+        { name: "activity", label: "Actividad", type: "string" },
+        { name: "location", label: "Lugar", type: "string" },
+        { name: "artist", label: "Artista", type: "string" },
+      ]},
+    ]},
+    { name: "registrationOpen", label: "Inscripción abierta", type: "boolean" },
+    { name: "registrationDeadline", label: "Fecha límite", type: "string" },
+    { name: "benefits", label: "Beneficios", type: "string", list: true },
+    { name: "sponsors", label: "Patrocinadores", type: "object", list: true, fields: [
+      { name: "name", label: "Nombre", type: "string" },
+      { name: "logo", label: "Logo", type: "image" },
+    ]},
+  ],
 }
-
-export interface FestivalScheduleItem {
-  day: string;         // "Miércoles 10 de septiembre"
-  date: string;        // "2025-09-10"
-  events: {
-    time: string;      // "10:00 AM"
-    activity: string;
-    location?: string;
-    artist?: string;
-  }[];
-}
-
-export interface FestivalEdition {
-  id: string;                          // "2025", "2027"
-  name: string;                        // "II Festival Internacional de Música Rubato"
-  year: number;
-  active: boolean;                     // true para la edición actual/vigente
-  dates: string;                       // "10 al 13 de septiembre"
-  description: string;                 // Texto introductorio de la edición
-  heroImage: string;
-  mission: string;
-  vision: string;
-  guests: FestivalGuest[];
-  schedule: FestivalScheduleItem[];
-  registrationOpen: boolean;           // si el formulario de inscripción está abierto
-  registrationDeadline?: string;       // "12 de septiembre de 2025"
-  benefits?: string[];                 // beneficios de inscripción
-  sponsors?: { name: string; logo: string }[];
-}
-
-export const festivalEditions: FestivalEdition[] = [
-  {
-    id: "2025",
-    name: "II Festival Internacional de Música Rubato",
-    year: 2025,
-    active: true,
-    dates: "10 al 13 de septiembre",
-    description: "...",
-    heroImage: "/images/festival-rubato/2025/hero.jpg",
-    mission: "...",
-    vision: "...",
-    guests: [ /* ... */ ],
-    schedule: [ /* ... */ ],
-    registrationOpen: false,
-    registrationDeadline: "12 de septiembre de 2025",
-    benefits: [ /* ... */ ],
-    sponsors: [ /* ... */ ],
-  },
-  // Ediciones futuras y pasadas...
-];
-
-// Helper: obtener la edición activa
-export const activeEdition = festivalEditions.find(e => e.active);
 ```
+
+**Consumo en Astro:**
+```astro
+---
+import { getCollection } from "astro:content";
+export async function getStaticPaths() {
+  const editions = await getCollection("festivalEditions");
+  return editions.map(e => ({ params: { edicion: e.data.id }, props: { edition: e } }));
+}
+const { edition } = Astro.props;
+---
 
 ## Notas de implementación
 

@@ -66,9 +66,11 @@
 ## Datos estructurados
 
 ```ts
-// src/data/events.ts (extensión futura)
+// content/events/ (colección TinaCMS — cada evento es un archivo .md)
+// Schema definido en tina/config.ts
+// Tipo inferido automáticamente por TinaCMS
+
 export interface Event {
-  id: string;
   title: string;
   date: Date;
   location: string;
@@ -88,7 +90,7 @@ export interface Event {
 
 ## Notas de implementación
 
-- **Tipo listado dinámico**: requiere al menos un archivo `.ts` con todos los eventos.
+- **Tipo listado dinámico**: los eventos provienen de la colección `content/events/` de TinaCMS, consumidos vía `getCollection("events")` de Astro.
 - Ordenar por fecha (más próximo primero). Eventos pasados pueden ir en sección "Eventos Anteriores" o página separada.
 - Los eventos scrapeados contienen fechas sin año explícito en la mayoría de los casos; los años deben inferirse o confirmarse con el cliente.
 - Algunos eventos tienen emojis en el título (🎶✨). Limpiar para la nueva web o mantener solo si es intencional del cliente.

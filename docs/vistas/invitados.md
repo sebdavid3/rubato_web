@@ -3,7 +3,7 @@
 - **Ruta:** /festival-rubato/[edicion]/invitados
 - **Fase:** 4
 - **Tipo:** estática
-- **Multi-edición:** Sí — invitados por edición desde `src/data/festival-editions.ts`
+- **Multi-edición:** Sí — invitados por edición desde `content/festival-editions/` (TinaCMS)
 
 ## Secciones
 
@@ -25,7 +25,7 @@
   - `socialLinks` — Enlaces a redes/web (opcional, iconos pequeños al pie de la card)
 
 ### 3. Artistas de ejemplo (II Edición 2025)
-- **Descripción:** Datos de referencia para la edición 2025. Estos van en `src/data/festival-editions.ts` dentro del objeto de la edición 2025.
+- **Descripción:** Datos de referencia para la edición 2025. Estos van en `content/festival-editions/2025.md` (documento TinaCMS).
 
 1. **Camilo Esteban Giraldo Duque** — Director de orquesta, violinista y conferencista internacional. Formado en París y Moscú. Concertino asociado Orchestre Symphonique de Lyon. Productor de bandas sonoras. Coach de Greeicy Rendón, Mike Bahía.
 2. **Daniel Simbaña Ruiz** (Ecuador) — Pianista, 21 años. Ganador Pianissimo 2024, Weltmusik Piano Festival 2025.
@@ -59,8 +59,8 @@
 
 ## Datos estructurados
 
-- `{edition.guests}: FestivalGuest[]` desde `src/data/festival-editions.ts`
-- `{edition.sponsors}` desde `src/data/festival-editions.ts`
+- `{edition.guests}: FestivalGuest[]` desde `content/festival-editions/` (TinaCMS)
+- `{edition.sponsors}` desde `content/festival-editions/`
 
 ## Notas de implementación
 

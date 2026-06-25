@@ -48,16 +48,17 @@ scraped-content/
 |------|-----------|
 | Framework | Astro 7 (Static Site Generation) |
 | Lenguaje | TypeScript |
+| CMS | TinaCMS (git-based, headless, free tier) |
 | Estilo | Tailwind CSS v4 |
 | Iconos | Lucide |
 | Formularios | React Hook Form + Zod + Resend (via Astro API routes) |
 | Donaciones | Stripe (fase posterior) |
-| Deploy | Cloudflare Pages o Netlify |
+| Deploy | Cloudflare Pages |
 
 ## Decisiones de arquitectura (no negociables)
 
-- **No se usa CMS** — el contenido vive en archivos TypeScript en `src/data/`
-- **No se usa MDX** — todo es `.astro` + data `.ts`
+- **CMS: TinaCMS** — contenido editorial en colecciones git-based (`content/`). Configuración permanece en `.ts` (`src/data/`)
+- **No se usa MDX para páginas** — las páginas son `.astro`. El contenido editorial usa Markdown + frontmatter YAML vía TinaCMS
 - **No se usa Formspree, Web3Forms ni multer** — formularios vía Astro API routes + Resend
 - **Rutas anidadas** — las subpáginas cuelgan de su padre (ej. `/festival-rubato/2025/invitados`)
 - **Fases secuenciales** — cada fase produce una versión desplegable
@@ -122,7 +123,7 @@ git branch -d feat/programs
 ## Features clave
 
 ### Ediciones del Festival
-El Festival Internacional de Música se realiza **cada 2 años**. Cada edición tiene sus propios invitados, cronograma, misión/visión e inscripciones. Las rutas usan el patrón `/festival-rubato/[edicion]/...` (ej. `/festival-rubato/2025/invitados`). Los datos de cada edición viven en `src/data/festival-editions.ts` con una interfaz `FestivalEdition`. La landing `/festival-rubato` redirige a la edición activa.
+El Festival Internacional de Música se realiza **cada 2 años**. Cada edición tiene sus propios invitados, cronograma, misión/visión e inscripciones. Las rutas usan el patrón `/festival-rubato/[edicion]/...` (ej. `/festival-rubato/2025/invitados`). Los datos de cada edición viven en la colección `content/festival-editions/` (TinaCMS). La landing `/festival-rubato` redirige a la edición activa.
 
 ### Venta de boletas con QR (futuro)
 Feature planificada para después del lanzamiento. Los eventos podrán tener venta de boletas integrada con Stripe + generación de QR + envío por email. Documentada en `vistas/eventos.md` como "Feature futura", Fase 6 estimada.

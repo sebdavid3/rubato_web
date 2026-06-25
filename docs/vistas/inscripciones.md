@@ -3,7 +3,7 @@
 - **Ruta:** /festival-rubato/[edicion]/inscripciones
 - **Fase:** 4
 - **Tipo:** formulario
-- **Multi-edición:** Sí — inscripciones por edición desde `src/data/festival-editions.ts`
+- **Multi-edición:** Sí — inscripciones por edición desde `content/festival-editions/` (TinaCMS)
 
 ## Secciones
 
@@ -75,9 +75,9 @@
 
 ## Datos estructurados
 
-- `{edition.registrationOpen}: boolean` desde `src/data/festival-editions.ts`
-- `{edition.registrationDeadline}: string | undefined` desde `src/data/festival-editions.ts`
-- `{edition.benefits}: string[] | undefined` desde `src/data/festival-editions.ts`
+- `{edition.registrationOpen}: boolean` desde `content/festival-editions/` (TinaCMS)
+- `{edition.registrationDeadline}: string | undefined` desde `content/festival-editions/`
+- `{edition.benefits}: string[] | undefined` desde `content/festival-editions/`
 
 ## Notas de implementación
 

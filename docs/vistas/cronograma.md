@@ -3,7 +3,7 @@
 - **Ruta:** /festival-rubato/[edicion]/cronograma
 - **Fase:** 4
 - **Tipo:** estática
-- **Multi-edición:** Sí — cronograma por edición desde `src/data/festival-editions.ts`
+- **Multi-edición:** Sí — cronograma por edición desde `content/festival-editions/` (TinaCMS)
 
 ## Secciones
 
@@ -55,9 +55,9 @@
 
 ## Datos estructurados
 
-- `{edition.schedule}: FestivalScheduleItem[]` desde `src/data/festival-editions.ts`
+- `{edition.schedule}: FestivalScheduleItem[]` desde `content/festival-editions/` (TinaCMS)
 - `{edition.dates}: string` — fechas legibles
-- `src/types/index.ts` — agregar `FestivalScheduleItem` y `FestivalEdition`
+- `src/types/index.ts` — tipos compartidos (inferidos por TinaCMS para `FestivalScheduleItem`, `FestivalEdition`)
 
 ## Notas de implementación
 

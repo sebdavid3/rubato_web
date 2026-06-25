@@ -19,11 +19,10 @@ Se migrarán las ~20 URLs del sitio Wix actual de la Fundación Rubato a un siti
 | **Envío de correos** | Resend (API vía serverless function) |
 | **Donaciones** | Fase posterior (Stripe, datos bancarios visibles mientras tanto) |
 | **Tipografías** | Libre Baskerville (Google Fonts), Avenir (system font stack) |
-| **Contenido** | Estático inline en `.astro` y objetos TypeScript — sin CMS ni MDX |
+| **Contenido** | TinaCMS (git-based CMS) — Markdown + YAML frontmatter en `content/`. Build-time: Astro colecciones de contenido |
 | **Deploy** | Cloudflare Pages (`git push` → build → deploy) |
 
 **Lo que NO se construye ahora:**
-- CMS / panel de administración
 - Pasarela de donaciones con Stripe (solo datos bancarios)
 - i18n / multi-idioma
 - Autenticación / área de miembros
@@ -39,6 +38,7 @@ Se migrarán las ~20 URLs del sitio Wix actual de la Fundación Rubato a un siti
 Astro 7 (SSG)
   ├── TypeScript (strict mode)
   ├── Tailwind CSS v4 (@tailwindcss/vite plugin)
+  ├── TinaCMS (git-based headless CMS, @tinacms/cli)
   ├── @astrojs/react (islas para formularios interactivos)
   ├── react-hook-form + zod (validación de formularios)
   ├── resend (envío de correos desde endpoints serverless)
@@ -74,6 +74,13 @@ rubato_web/
 │       ├── apoyanos/
 │       ├── contactanos/
 │       └── team/
+├── content/                         ← TinaCMS (contenido editorial)
+│   ├── events/                      # Colección: eventos (título, fecha, lugar, etc.)
+│   ├── team/                        # Colección: miembros del equipo
+│   ├── programs/                    # Colección: programas de inicio
+│   └── festival-editions/           # Colección: ediciones del festival
+├── tina/                            ← Configuración de TinaCMS
+│   └── config.ts                    # Schema de colecciones + configuración
 ├── src/
 │   ├── components/
 │   │   ├── layout/
@@ -107,18 +114,14 @@ rubato_web/
 │   │       ├── ContactForm.tsx       # Formulario de contacto (React island)
 │   │       ├── CourseForm.tsx        # Formulario de inscripción cursos (React island)
 │   │       └── FestivalForm.tsx      # Formulario de inscripción festival (React island)
-│   ├── data/
+│   ├── data/                         ← Configuración y datos estáticos (no editoriales)
 │   │   ├── site.ts                  # Nombre, tagline, redes sociales, datos de contacto
 │   │   ├── navigation.ts            # Estructura del menú de navegación
-│   │   ├── programs.ts              # Programas (Conservatorio, Filarmónica, etc.)
-│   │   ├── events.ts                # Lista de eventos (título, fecha, lugar, descripción)
-│   │   ├── team.ts                  # Miembros del equipo (nombre, cargo, foto, bio)
-│   │   ├── festival-invitados.ts    # Invitados del festival
-│   │   ├── festival-cronograma.ts   # Cronograma del festival
-│   │   ├── courses-pricing.ts       # Precios de cursos libres
+│   │   ├── banking.ts               # Datos bancarios (cuenta, tipo, banco, NIT)
 │   │   ├── instruments.ts           # Lista de instrumentos
-│   │   ├── riomar-quartet.ts        # Integrantes del RioMar Quartet
-│   │   ├── orquesta-camara.ts       # Integrantes Orquesta de Cámara
+│   │   ├── courses-pricing.ts       # Precios de cursos libres
+│   │   ├── riomar-quartet.ts        # Integrantes del RioMar Quartet + hitos
+│   │   ├── orquesta-camara.ts       # Integrantes Orquesta de Cámara + misión/visión
 │   │   ├── repertorio.ts            # Repertorio de audiciones
 │   │   ├── requisitos.ts            # Requisitos de audición
 │   │   └── preparacion.ts           # Pasos de preparación para audición
@@ -341,72 +344,90 @@ Base.astro                           ← HTML shell, meta tags, fonts, global CS
 
 ## 5. Flujo de Datos
 
-### 5.1 Contenido estático (sin CMS)
+### 5.1 Contenido editorial (TinaCMS)
 
-**Decisión**: No se usa CMS ni MDX. El contenido vive en archivos TypeScript dentro de `src/data/` y se importa directamente en los `.astro` pages. Esto es apropiado porque:
+**Decisión**: Se usa **TinaCMS** (git-based, headless, free tier) para el contenido editorial. El contenido vive en archivos Markdown + YAML frontmatter en `content/` y se consume vía las colecciones de contenido de Astro.
 
-- El contenido cambia esporádicamente (eventos cada 2-3 meses, equipo cada año).
-- Las ~20 páginas no justifican la complejidad de un CMS.
-- Un cambio de contenido = PR + deploy automático en Cloudflare Pages (2 minutos).
-- Si en el futuro se necesita un CMS, migrar de objetos TS a una API de contenido es trivial.
-
-**Estructura de datos tipada:**
-
-```ts
-// src/types/index.ts
-export interface Event {
-  title: string;
-  date: Date;
-  location: string;
-  description?: string;
-  image?: string;
-  tags?: string[];
-}
-
-export interface TeamMember {
-  name: string;
-  role: string;
-  image: string;
-  bio?: string;
-  instrument?: string;  // para músicos
-}
-
-export interface Program {
-  title: string;
-  description: string;
-  image: string;
-  href: string;
-  tags?: string[];
-}
-
-export interface NavItem {
-  label: string;
-  href: string;
-  children?: NavItem[];
-}
-
-export interface Instrument {
-  name: string;
-  icon: string; // nombre de ícono Lucide
-}
-
-// ... etc.
+**Flujo de edición:**
+```
+Editor → TinaCMS UI web (localhost:4001/admin)
+  → edita contenido (formulario visual)
+  → guarda → commit + push automático al repo
+  → Cloudflare Pages detecta el push → rebuild → deploy
 ```
 
-**Ejemplo de data file:**
+El editor nunca toca código. La UI de TinaCMS presenta formularios tipados con validación. Los archivos generados son Markdown estándar con frontmatter YAML.
+
+**Qué va a TinaCMS (contenido editorial que cambia):**
+
+| Colección | Tipo | Contenido |
+|-----------|------|-----------|
+| `content/events/` | Colección | Eventos (título, fecha, lugar, descripción, imagen, slug) |
+| `content/team/` | Colección | Miembros del equipo (nombre, cargo, foto, bio) |
+| `content/programs/` | Colección | Programas de inicio (título, descripción, imagen, href) |
+| `content/festival-editions/` | Colección | Ediciones del festival (año, misión, visión, invitados, cronograma, inscripciones) |
+
+**Qué queda como `.ts` (configuración, no editorial):**
+
+| Archivo | Contenido |
+|---------|-----------|
+| `src/data/site.ts` | Nombre, tagline, redes sociales, datos de contacto |
+| `src/data/navigation.ts` | Estructura del menú de navegación |
+| `src/data/banking.ts` | Datos bancarios (cuenta, tipo, banco, NIT) |
+| `src/data/instruments.ts` | Lista de instrumentos (referencia estática) |
+| `src/data/courses-pricing.ts` | Precios de cursos libres (referencia) |
+| `src/data/riomar-quartet.ts` | Integrantes RioMar Quartet + hitos |
+| `src/data/orquesta-camara.ts` | Integrantes Orquesta de Cámara |
+| `src/data/repertorio.ts` | Repertorio de audiciones |
+| `src/data/requisitos.ts` | Requisitos de audición |
+| `src/data/preparacion.ts` | Pasos de preparación para audición |
+| `src/types/index.ts` | Tipos compartidos (Event, TeamMember, etc.) |
+
+**Schema de TinaCMS (ejemplo para eventos):**
 
 ```ts
-// src/data/team.ts
-import type { TeamMember } from "../types";
+// tina/config.ts
+import { defineConfig } from "tinacms";
 
-export const team: TeamMember[] = [
-  { name: "Alfredo Reyes", role: "Director", image: "/images/acerca-de-nosotros/alfredo.jpg" },
-  { name: "Steffin Hernandez", role: "Gerente", image: "/images/acerca-de-nosotros/steffin.jpg" },
-  { name: "Victoria Garcia", role: "Asistente Administrativa", image: "/images/acerca-de-nosotros/victoria.jpg" },
-  { name: "Sebastian Ibañez", role: "Gerente TI", image: "/images/acerca-de-nosotros/sebastian.jpg" },
-  { name: "David Jiménez", role: "Asistente de Dirección", image: "/images/acerca-de-nosotros/david.jpg" },
-];
+export default defineConfig({
+  schema: {
+    collections: [
+      {
+        name: "event",
+        label: "Eventos",
+        path: "content/events",
+        format: "md",
+        fields: [
+          { name: "title", label: "Título", type: "string", required: true },
+          { name: "date", label: "Fecha", type: "datetime", required: true },
+          { name: "location", label: "Lugar", type: "string", required: true },
+          { name: "description", label: "Descripción", type: "rich-text" },
+          { name: "image", label: "Imagen", type: "image" },
+          { name: "slug", label: "Slug", type: "string", required: true },
+          { name: "tags", label: "Etiquetas", type: "string", list: true },
+        ],
+      },
+      // ... team, programs, festival-editions
+    ],
+  },
+});
 ```
+
+**Consumo en páginas Astro:**
+
+```astro
+---
+// src/pages/eventos.astro — antes:
+// import { events } from "../data/events";
+
+// Ahora con TinaCMS + Astro content collections:
+import { getCollection } from "astro:content";
+const events = await getCollection("events");
+events.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+---
+```
+
+TinaCMS genera tipos TypeScript automáticamente desde el schema (`tina/__generated__/types.ts`), manteniendo el tipado estricto en todo el proyecto.
 
 ### 5.2 Formularios → Resend
 
@@ -436,7 +457,7 @@ export const POST: APIRoute = async ({ request }) => {
 
 ### 5.3 Eventos (lista dinámica)
 
-La página `/eventos` muestra todos los eventos del array `events` en `src/data/events.ts`. No hay base de datos. Para añadir un evento se edita el archivo y se hace deploy. La paginación se hace client-side con un simple `slice()` en una isla React (o con un script vanilla).
+La página `/eventos` muestra todos los eventos desde la colección `content/events/` vía `getCollection("events")`. No hay base de datos — el contenido es estático en el build, gestionado desde TinaCMS. Para añadir un evento, el editor usa la UI de TinaCMS; al guardar se hace commit + push automático y Cloudflare Pages redeploya. La paginación se hace client-side con `slice()` en una isla React o script vanilla.
 
 ---
 
@@ -647,7 +668,7 @@ La página `/eventos` muestra todos los eventos del array `events` en `src/data/
 
 ### 9.1 Fuente del contenido
 
-Todo el contenido textual proviene de `scraped-content/content/*.md`. Estas son extracciones directas del Wix actual. El formato es **texto plano sin estructura semántica** — hay que reescribirlo en los archivos de datos y páginas.
+Todo el contenido textual proviene de `scraped-content/content/*.md`. Estas son extracciones directas del Wix actual. El formato es **texto plano sin estructura semántica** — hay que reescribirlo como archivos Markdown con frontmatter YAML para TinaCMS.
 
 ### 9.2 Flujo de incorporación
 
@@ -656,8 +677,9 @@ Para cada página:
 1. Leer el `.md` correspondiente en `scraped-content/content/`
 2. Extraer texto relevante (títulos, párrafos, datos estructurados)
 3. Separar contenido en dos destinos:
-   - **Data files** (`src/data/`): datos estructurados y repetibles (eventos, equipo, instrumentos, precios)
-   - **Inline en `.astro`**: texto libre, párrafos descriptivos, citas
+   - **Colecciones TinaCMS** (`content/`): contenido editorial que cambia (eventos, equipo, programas, ediciones del festival). Cada ítem es un archivo `.md` con frontmatter YAML.
+   - **Data files** (`src/data/`): configuración y datos estáticos (bancarios, instrumentos, precios, navegación)
+   - **Inline en `.astro`**: texto libre no estructurado, párrafos descriptivos, citas
 4. Verificar consistencia con `inventario-rutas.md` (secciones, orden)
 5. Verificar contra el Wix original si hay dudas
 
@@ -688,13 +710,13 @@ El inventario de rutas detectó 4 inconsistencias que deben resolverse con la fu
 
 | Contenido | Frecuencia estimada | Dónde vive | Cómo se actualiza |
 |-----------|-------------------|------------|-------------------|
-| Eventos | Cada 2-3 meses | `src/data/events.ts` | PR → merge → deploy |
+| Eventos | Cada 2-3 meses | `content/events/` | Editor usa TinaCMS UI → guardar → deploy automático |
 | Precios de cursos | Anual | `src/data/courses-pricing.ts` | PR → merge → deploy |
-| Equipo | Anual | `src/data/team.ts` | PR → merge → deploy |
-| Invitados del festival | Por edición del festival | `src/data/festival-invitados.ts` | PR → merge → deploy |
-| Cronograma del festival | Por edición | Imagen o data file | PR → merge → deploy |
+| Equipo | Anual | `content/team/` | Editor usa TinaCMS UI → guardar → deploy automático |
+| Invitados del festival | Por edición del festival | `content/festival-editions/` | Editor usa TinaCMS UI → guardar → deploy automático |
+| Cronograma del festival | Por edición | `content/festival-editions/` | Editor usa TinaCMS UI → guardar → deploy automático |
 
-Para todos los casos, el proceso es: editar archivo → PR → aprobar → merge → Cloudflare Pages hace deploy automático en < 2 minutos.
+Para contenido editorial en TinaCMS: abrir UI → editar → guardar → commit automático → Cloudflare Pages deploy. Para configuración en `.ts`: PR → aprobar → merge → deploy.
 
 ---
 

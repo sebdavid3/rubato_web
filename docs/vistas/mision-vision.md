@@ -3,7 +3,7 @@
 - **Ruta:** /festival-rubato/[edicion]/mision-vision
 - **Fase:** 4
 - **Tipo:** estática
-- **Multi-edición:** Sí — contenido por edición desde `src/data/festival-editions.ts`
+- **Multi-edición:** Sí — contenido por edición desde `content/festival-editions/` (TinaCMS)
 
 ## Secciones
 
@@ -40,7 +40,7 @@
 
 ## Datos estructurados
 
-- `{edition.mission}` y `{edition.vision}` desde `src/data/festival-editions.ts`
+- `{edition.mission}` y `{edition.vision}` desde `content/festival-editions/` (TinaCMS)
 - `src/data/festival-fundacional.ts` — misión y visión fundacionales (fallback para ediciones que no tengan propias)
 
 ## Notas de implementación
